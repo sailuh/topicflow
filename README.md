@@ -1,5 +1,7 @@
 # TopicFlow
 
+![topicflow_interface_not_loaded](doc/topicflow_interface.png)
+
 This is a fork from the TopicFlow project by Smith et al [1].
 
 The original Github project includes all the necessary code to display visualization for data contained within each [data](https://github.com/sailuh/topicflow/tree/master/data) folder project. The scripts required to generate said data in the original Github project, however, do not seem to be available.
