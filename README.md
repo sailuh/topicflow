@@ -8,6 +8,8 @@ The original Github project includes all the necessary code to display visualiza
 
 This fork is a work-in-progress to create the data scripts pipeline to reuse TopicFlow for any other corpus besides Tweets.
 
+This version of TopicFlow can be utilized to visualize Full Disclosure datasets for [PERCEIVE](https://github.com/sailuh/perceive). A detailed notebook of how the data transformation pipeline works can be found in `Data Transformation Pipeline for Full Disclosure- a Notebook`.
+
 ## Usage
 
 Git clone this project, and from the main directory, issue the following command:
@@ -22,6 +24,13 @@ Once the tool is running, you can access it at http://localhost:8000/#
 
 You'll be asked to select a dataset, for which you can choose from four different datasets of tweets that existed in the local repository.
 
+### Advanced Usage
+Creating new projects or running existing projects in TopicFlow is now made simple with `run.py`. To see how it works, issue the following command:
+
+`python run.py -h`
+
+Notice that this program requires python3 environment. A detailed notebook of how the data transformation pipeline works can be found in `Data Transformation Pipeline for Full Disclosure- a Notebook`.
+
 ## Data Model
 
 Please see the `data_model` folder in this repo. The editable files for the images are in XML and can be imported on [Draw.io](http://draw.io) to be edited.
@@ -30,11 +39,6 @@ Please see the `data_model` folder in this repo. The editable files for the imag
 ## Work Log
 
  * **TODO:** Reshape Topic-Term Matrix, Document-Term Matrix, and Cosine Similarity Score Matrix to conform to TopicFlow input.
-
- * **TODO:** Create a Data Model of the 3. JSON files required for a project.
-   * Bins.json
-   * **TODO**: TopicSimilarity.json
-   * **TODO**: Tweet.json
 
  * LDA Topics and Similarity Measurements can already be constructed but needs some refactoring before pushing to Github.
 
