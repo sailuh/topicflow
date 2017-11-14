@@ -41,9 +41,15 @@ def read_data(df_list=False, df_topic_doc=False, df_topic_word=False, df_topic_s
     if df_list == True:
         df_list = []
         for month in month_list:
-            yr = os.listdir(path_doc)[0][:4] # find the year of documents
+            for file in os.listdir(path_doc):
+                if file.endswith(".txt"):
+                    yr = file[:4]
+                    break
+#            yr = os.listdir(path_doc)[0][:4] # find the year of documents
+            filename = "Full_Disclosure_Mailing_List_" + month + yr + ".csv"
+            path_file = os.path.join(path_doc, filename)
             df_list.append(
-                pd.read_csv(glob.glob(path_doc + '\\Full_Disclosure_Mailing_List_' + month + yr + '.csv')[0],
+                pd.read_csv(glob.glob(path_file)[0],
                             encoding = 'cp1252', # encoding "cp1252" stands for Windows character set
                             index_col= 0)
             )
@@ -52,8 +58,10 @@ def read_data(df_list=False, df_topic_doc=False, df_topic_word=False, df_topic_s
     if df_topic_doc == True:
         df_topic_doc = []
         for month in month_list:
+            filename = month + ".csv"
+            path_file = os.path.join(path_LDA, "document_topic_Matrix", filename) 
             df_topic_doc.append(
-                pd.read_csv(path_LDA + "\\document_topic_Matrix\\" + month + ".csv",
+                pd.read_csv(path_file,
                             index_col= 0)
             )
         return df_topic_doc
@@ -61,14 +69,17 @@ def read_data(df_list=False, df_topic_doc=False, df_topic_word=False, df_topic_s
     if df_topic_word == True:
         df_topic_word = []
         for month in month_list:
+            filename = month + ".csv"
+            path_file = os.path.join(path_LDA, "Topic_Term_Matrix", filename) 
             df_topic_word.append(
-                pd.read_csv(path_LDA + "\\Topic_Term_Matrix\\" + month + ".csv",
+                pd.read_csv(path_file,
                             index_col= 0)
             )
         return df_topic_word
 
     if df_topic_sim == True:
-        df_topic_sim = pd.read_csv(path_LDA + "\\Topic_Flow\\topic_flow.csv")
+        path_file = os.path.join(path_LDA, "Topic_Flow", "topic_flow.csv") 
+        df_topic_sim = pd.read_csv(path_file)
         return df_topic_sim
 
 
@@ -83,7 +94,7 @@ def modify_html(project_name, path_tf):
         path_tf      -- path of topicflow directory
     """
     # read exisitng index.html and parse by lines
-    with open(path_tf + '\index.html', 'r') as file:
+    with open(os.path.join(path_tf, 'index.html'), 'r') as file:
         html = file.read()
 
     html_parse = html.split('\n')
@@ -100,8 +111,8 @@ def modify_html(project_name, path_tf):
 
     # replace existing index.html
     html_combine = '\n'.join(html_parse)
-    os.remove(path_tf + '\index.html')
-    with open(path_tf + '\index.html', 'w') as file:
+    os.remove(os.path.join(path_tf, 'index.html'))
+    with open(os.path.join(path_tf, 'index.html'), 'w') as file:
         file.write(html_combine)
 
     print('\nindex.html modified,        20% complete.')
@@ -119,7 +130,7 @@ def modify_controller(project_name, path_tf):
         path_tf      -- path of topicflow directory
     """
     # read exisitng controller.js and parse by lines
-    with open(path_tf + '\scripts\controller.js', 'r') as file:
+    with open(os.path.join(path_tf, 'scripts', 'controller.js'), 'r') as file:
         controller = file.read()
 
     controller_parse = controller.split('\n')
@@ -136,8 +147,8 @@ def modify_controller(project_name, path_tf):
 
     # replace existing controller.js
     controller_combine = '\n'.join(controller_parse)
-    os.remove(path_tf + '\scripts\controller.js')
-    with open(path_tf + '\scripts\controller.js', 'w') as file:
+    os.remove(os.path.join(path_tf, 'scripts', 'controller.js'))
+    with open(os.path.join(path_tf, 'scripts', 'controller.js'), 'w') as file:
         file.write(controller_combine)
 
     print('controller.js modified,     40% complete.')
@@ -192,8 +203,13 @@ def transform_doc(project_name, path_doc):
             # iterate and read .txt files of a month, add text to a list
             # it's worth noting the encoding is 'latin1'
             try:
-                doc_file = glob.glob(path_doc + '\\*' + month_list[month_ix] + '_' + ix + '.txt')[0]
-                with open(doc_file, 'r',
+                for file in os.listdir(path_doc):
+                    if file.endswith(".txt"):
+                        yr = file[:4]
+                        break
+                filename = yr + '_' + month_list[month_ix] + '_' + ix + '.txt'
+                path_file = os.path.join(path_doc, filename)
+                with open(path_file, 'r',
                           encoding='latin1') as textfile:
                     tmp = textfile.read().replace('"','').replace('http://','').replace('\\','').replace('\n','')
                 text.append(tmp)
@@ -217,11 +233,11 @@ def transform_doc(project_name, path_doc):
 
     ### WRITE
     # make a directory named after project_name
-    if os.path.isdir(path_tf + '\\data\\' + project_name) == False:
-        os.mkdir(path_tf + '\\data\\' + project_name)
+    if os.path.isdir(os.path.join(path_tf, 'data', project_name)) == False:
+        os.mkdir(os.path.join(path_tf, 'data', project_name))
 
     # write
-    with open(path_tf + '\\data\\' + project_name + '\\Doc.js', 'w') as file:
+    with open(os.path.join(path_tf, 'data', project_name, 'Doc.js'), 'w') as file:
         file.write(doc_js)
 
     print('Doc.js created,             60% complete.')
@@ -283,6 +299,7 @@ def transform_bins(project_name, path_doc, path_LDA):
         bin_dict[str(month_ix)]['start_time'] = pd.to_datetime(df_list[month_ix].dateStamp).sort_values().apply(lambda x: str(x.month) + '/' + str(x.day) + '/' + str(x.year) + ' ' + str(x.hour) + ':' + str(x.minute)).tolist()[0]
     for month_ix in range(len(month_list)):
         bin_dict[str(month_ix)]['end_time'] = pd.to_datetime(df_list[month_ix].dateStamp).sort_values().apply(lambda x: str(x.month) + '/' + str(x.day) + '/' + str(x.year) + ' ' + str(x.hour) + ':' + str(x.minute)).tolist()[-1]
+
 
     # initiate topic_model
     for month_ix in range(len(month_list)):
@@ -397,7 +414,7 @@ def transform_bins(project_name, path_doc, path_LDA):
 
 
     ### WRITE
-    with open(path_tf + '\\data\\' + project_name + '\\Bins.js', 'w') as file:
+    with open(os.path.join(path_tf, 'data', project_name, 'Bins.js'), 'w') as file:
         file.write(bins_js)
 
     print('Bins.js created,            80% complete.')
@@ -452,7 +469,7 @@ def transform_topicSimilarity(project_name, path_LDA):
         for row_ix in range(len(df_tmp)):
             source = month_ix*10 + int(df_tmp[mm1].values[row_ix]) - 1
             target = (month_ix+1)*10 + int(df_tmp[mm2].values[row_ix]) - 1
-            score = df_tmp[sim].values[row_ix] * 350 # 350 makes it neither too small nor too high
+            score = df_tmp[sim].values[row_ix] * 200 # 200 makes it neither too thin nor too thick
             link_tmp = {}
             link_tmp['source'], link_tmp['target'], link_tmp['value'] = source, target, score
             links.append(link_tmp)
@@ -471,7 +488,7 @@ def transform_topicSimilarity(project_name, path_LDA):
 
 
     ### WRITE
-    with open(path_tf + '\\data\\' + project_name + '\\TopicSimilarity.js', 'w') as file:
+    with open(os.path.join(path_tf, 'data', project_name, 'TopicSimilarity.js'), 'w') as file:
         file.write(topicSimilarity_js)
 
     print('TopicSimilarity.js created, 100% complete.')
@@ -479,6 +496,11 @@ def transform_topicSimilarity(project_name, path_LDA):
 
 if __name__ == "__main__":
     time_start = time.time()
+    
+    # path of topicflow, independent of operating system
+    path_tf = sys.argv[0][:-6]
+    if len(path_tf) == 0:
+        path_tf = '.'
 
     ### ARGPARSE
     parser = argparse.ArgumentParser(prog = 'TopicFlow Creator',
@@ -486,28 +508,23 @@ if __name__ == "__main__":
                                      epilog = 'Then you can open a browser and type in localhost:8000 to see the visualization! When done, just stop the process in terminal.')
     parser.add_argument('-n', '--new',  type = str,
                         help = 'Enter the name of a new project, no space allowed.')
-    parser.add_argument('-r', '--run',  type = str,
-                        help = 'Run an existing project, no space allowed.')
-    parser.add_argument('-p', '--path', type = str, nargs = '+',
-                        help = 'Please specify the paths of [topicflow, document files, LDA files], enclosing each in double quotes. If starting a new project, all three paths should be specified. If running an existing project, only the path of topicflow needs to be specified. EXAMPLE: -n "Trending" -p "E:\\...\\topicflow" "E:\\...\\data\\docs" "E:\\...\\data\\LDA".')
+    parser.add_argument('-a', '--add', type = str, nargs = '+',
+                        help = 'Please specify the paths of [document files, LDA files], enclosing each in double quotes. If starting a new project, both paths should be specified. If running an existing project, no need to use this flag. EXAMPLE: -n "Trending" -a "E:\\...\\data\\docs" "E:\\...\\data\\LDA".')
     args = parser.parse_args()
 
+    
     if args.new:
         project_name = args.new
-        path_tf  = args.path[0]
-        path_doc = args.path[1]
-        path_LDA = args.path[2]
+        path_doc = args.add[0]
+        path_LDA = args.add[1]
+        
+        if os.path.isdir(path_doc) and os.path.isdir(path_LDA):
+            modify_html(project_name, path_tf)
+            modify_controller(project_name, path_tf)
+            transform_doc(project_name, path_doc)
+            transform_bins(project_name, path_doc, path_LDA)
+            transform_topicSimilarity(project_name, path_LDA)
 
-        modify_html(project_name, path_tf)
-        modify_controller(project_name, path_tf)
-        transform_doc(project_name, path_doc)
-        transform_bins(project_name, path_doc, path_LDA)
-        transform_topicSimilarity(project_name, path_LDA)
-
-    elif args.run:
-        project_name = args.run
-        path_tf = args.path[0]
-        sys.stdout.write(project_name)
 
     print('\nTotal time taken:', str(round(time.time() - time_start, 2)), 'seconds.\n')
 
