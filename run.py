@@ -3,7 +3,6 @@ import pandas as pd
 import json
 import os
 import sys
-import glob
 import time
 import argparse
 import http.server
@@ -21,14 +20,14 @@ def read_data(df_list=False, df_topic_doc=False, df_topic_word=False, df_topic_s
 
     Args:
         df_list       -- if set to True, returns a list containing the metadata of
-                         Full Disclosure emails of every month in a year.
-        df_topic_doc  -- if set to True, returns a list containing the Topic-document
-                         matrixes of every month in a year.
-        df_topic_word -- if set to True, returns a list containing the Topic-Term
-                         matrixes of every month in a year.
-        df_topic_sim  -- if set to True, returns pandas.DataFrame object showing
+                         Full Disclosure emails of every month in a year
+        df_topic_doc  -- if set to True, returns a list containing the Topic-Document
+                         matrixes of every month in a year
+        df_topic_word -- if set to True, returns a list containing the Topic-Word
+                         (or Topic-Term) matrixes of every month in a year
+        df_topic_sim  -- if set to True, returns a pandas.DataFrame object showing
                          the similarity scores of some topics between every two
-                         months.
+                         months
 
     Returns:
         Depending on which one argument is set to True, the function returns either
@@ -40,26 +39,18 @@ def read_data(df_list=False, df_topic_doc=False, df_topic_word=False, df_topic_s
 
     if df_list == True:
         df_list = []
-        for month in month_list:
-            for file in os.listdir(path_doc):
-                if file.endswith(".txt"):
-                    yr = file[:4]
-                    break
-#            yr = os.listdir(path_doc)[0][:4] # find the year of documents
-            filename = "Full_Disclosure_Mailing_List_" + month + yr + ".csv"
-            path_file = os.path.join(path_doc, filename)
-            df_list.append(
-                pd.read_csv(glob.glob(path_file)[0],
-                            encoding = 'cp1252', # encoding "cp1252" stands for Windows character set
-                            index_col= 0)
-            )
+        for folder in os.listdir(path_meta):
+            path_folder = os.path.join(path_meta, folder)
+            file_csv = [x for x in os.listdir(path_folder) if x.endswith('.csv')][0]
+            path_csv = os.path.join(path_folder, file_csv)
+            df_list.append(pd.read_csv(path_csv))
         return df_list
 
     if df_topic_doc == True:
         df_topic_doc = []
         for month in month_list:
             filename = month + ".csv"
-            path_file = os.path.join(path_LDA, "document_topic_Matrix", filename) 
+            path_file = os.path.join(path_LDA, "Document_Topic_Matrix", filename) 
             df_topic_doc.append(
                 pd.read_csv(path_file,
                             index_col= 0)
@@ -83,80 +74,9 @@ def read_data(df_list=False, df_topic_doc=False, df_topic_word=False, df_topic_s
         return df_topic_sim
 
 
-def modify_html(project_name, path_tf):
+def transform_doc(project_name, path_doc, path_meta, doc_extension):
     """
-    Modify the content of \topicflow\index.html.
-    Two hand-added comments are used to locate the lines where new content can be
-    added. Executing the function would replace the existing index.html.
-
-    Args:
-        project_name -- name of the new project
-        path_tf      -- path of topicflow directory
-    """
-    # read exisitng index.html and parse by lines
-    with open(os.path.join(path_tf, 'index.html'), 'r') as file:
-        html = file.read()
-
-    html_parse = html.split('\n')
-
-    # add new section after '<!-- add new section after this line -->'
-    ix = html_parse.index('<!-- add new section after this line -->')
-    new_section = '<script src="data/SHA/Doc.js"></script>\n<script src="data/SHA/Bins.js"></script>\n<script src="data/SHA/TopicSimilarity.js"></script>\n'.replace('SHA',project_name)
-    html_parse.insert(ix+1, new_section)
-
-    # add new selector after '<!-- add new dataset selector after this line -->'
-    ix = html_parse.index('\t\t\t<!-- add new dataset selector after this line -->')
-    new_selector = '\t\t\t<li id="SHA"><a href="#">SHA</a></li>'.replace('SHA', project_name)
-    html_parse.insert(ix+1, new_selector)
-
-    # replace existing index.html
-    html_combine = '\n'.join(html_parse)
-    os.remove(os.path.join(path_tf, 'index.html'))
-    with open(os.path.join(path_tf, 'index.html'), 'w') as file:
-        file.write(html_combine)
-
-    print('\nindex.html modified,        20% complete.')
-
-
-def modify_controller(project_name, path_tf):
-    """
-    Modify the content of \topicflow\scripts\controller.js.
-
-    Two hand-added comments are used to locate the lines where new content can be
-    added. Executing the function would replace the existing controller.js.
-
-    Args:
-        project_name -- name of the new project
-        path_tf      -- path of topicflow directory
-    """
-    # read exisitng controller.js and parse by lines
-    with open(os.path.join(path_tf, 'scripts', 'controller.js'), 'r') as file:
-        controller = file.read()
-
-    controller_parse = controller.split('\n')
-
-    # add idToName after '// add new idToName'
-    ix = controller_parse.index('\t\t\t\t\t// add new idToName')
-    new_idToName = '\t\t\t\t\t"SHA":"SHA",'.replace('SHA', project_name)
-    controller_parse.insert(ix+1, new_idToName)
-
-    # add selected dataset after '// add new selected dataset here'
-    ix = controller_parse.index('\t// add new selected dataset here')
-    new_selectedDataset = '\tif (selected_data==="SHA") {\n\t\tpopulate_tweets_SHA();\n\t\tpopulate_bins_SHA();\n\t\tpopulate_similarity_SHA();\n\t}'.replace('SHA', project_name)
-    controller_parse.insert(ix+1, new_selectedDataset)
-
-    # replace existing controller.js
-    controller_combine = '\n'.join(controller_parse)
-    os.remove(os.path.join(path_tf, 'scripts', 'controller.js'))
-    with open(os.path.join(path_tf, 'scripts', 'controller.js'), 'w') as file:
-        file.write(controller_combine)
-
-    print('controller.js modified,     40% complete.')
-
-
-def transform_doc(project_name, path_doc):
-    """
-    Transform Full Disclosure email documents in .txt formats into
+    Transform Full Disclosure email documents from .txt formats into
     JavaScript format that TopicFlow can read.
 
     Args:
@@ -164,88 +84,88 @@ def transform_doc(project_name, path_doc):
         path_doc     -- path of documents directory
 
     Returns:
-        a JavaScript formatted string ready to be written as "Doc.js".
+        a dictionary that maps document id with .txt file name that will be 
+        used in transform_bins
+        
+    Outcome:        
+        "Doc.js"
     """
 
-    ### DEFINE month_list, READ DATA
-    month_list = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    ### READ METADATA
     df_list = read_data(df_list=True)
 
 
     ### DATA TRANSFORMATION
-    # initiate four elements of Doc.js
-    tweet_id = None
-    author = []
-    tweet_date = []
-    text = []
-
-    # populate tweet_id
-    tweet_count = 0
-    for month_ix in range(len(month_list)):
-        tweet_count += len(df_list[month_ix])
-    tweet_id = list(range(1, tweet_count + 1))
-
-    # populate author
-    for month_ix in range(len(month_list)):
-        author += df_list[month_ix].author.apply(lambda x: x.replace('"','')).tolist()
-
-    # populate tweet_date
-    for month_ix in range(len(month_list)):
-        # transform time into "mm/dd/yy hh:mm" format
-        tweet_date += pd.to_datetime(df_list[month_ix].dateStamp).apply(lambda x: str(x.month) + '/' + str(x.day) + '/' + str(x.year) + ' ' + str(x.hour) + ':' + str(x.minute)).tolist()
-
-    # populate text
-    for month_ix in range(len(month_list)):
-        M = df_list[month_ix]
-        for text_ix in range(len(M)):
-            # 'k' points to the name of the file
-            ix = str(M['k'].values[text_ix])
-            # iterate and read .txt files of a month, add text to a list
-            # it's worth noting the encoding is 'latin1'
+    # initiate one main dictionary of Doc.js and one dictionary that maps 
+    # document id with .txt file name
+    tweet_data = {}    # which contains all elements of documents
+    tweet_id_txt = {}  # use this for transform_bins
+    
+    # find documents
+    id_pointer = 1     # tweet_id starts with 1
+    for month_ix, folder in enumerate(os.listdir(path_doc)):
+        tweet_id_txt[str(month_ix)] = {}
+        tweet_id_txt[str(month_ix)]['id'] = []
+        tweet_id_txt[str(month_ix)]['txt'] = []
+        path_folder = os.path.join(path_doc, folder)
+        # read .txt files with the user-specified extension
+        txt_list = [x for x in os.listdir(path_folder) if x.endswith(doc_extension)]
+        # find .txt files that match their metadata entries
+        for txt in txt_list:
+            txt_entry_elements = txt.split('.')[0].split('_') # looks like ['2005', 'Jan', '0']
+            txt_entry_elements[1] = folder[-2:]               # looks like ['2005', '01', '0']
+            txt_entry = '_'.join(txt_entry_elements)          # looks like '2005_01_0', use this to find document metadata in .csv file
+            # only make a record if there's a match between .txt file and metadata,
+            # and the file is readable.
             try:
-                for file in os.listdir(path_doc):
-                    if file.endswith(".txt"):
-                        yr = file[:4]
-                        break
-                filename = yr + '_' + month_list[month_ix] + '_' + ix + '.txt'
-                path_file = os.path.join(path_doc, filename)
-                with open(path_file, 'r',
-                          encoding='latin1') as textfile:
-                    tmp = textfile.read().replace('"','').replace('http://','').replace('\\','').replace('\n','')
-                text.append(tmp)
+                row = df_list[month_ix][df_list[month_ix]['id'] == txt_entry]
+                author = row['author'].values[0]
+                date = pd.to_datetime(row['date']).apply(lambda x: str(x.month) + '/' + str(x.day) + '/' + str(x.year) + ' ' + str(x.hour) + ':' + str(x.minute)).values[0]
+                with open(os.path.join(path_folder, txt), 'r',
+                          encoding='latin1') as textfile:     # notice the encoding
+                    text = textfile.read().replace('"','').replace('http://','').replace('\\','').replace('\n','') # remove irrgular expressions
+                
+                # populate content
+                tweet_data[str(id_pointer)] = {}
+                tweet_id_txt[str(month_ix)]['id'].append(id_pointer)
+                tweet_id_txt[str(month_ix)]['txt'].append(txt.split('.')[0] + '.txt')
+                tweet_data[str(id_pointer)]['tweet_id'] = id_pointer
+                tweet_data[str(id_pointer)]['author'] = author
+                tweet_data[str(id_pointer)]['tweet_date'] = date
+                tweet_data[str(id_pointer)]['text'] = text
+                
+                id_pointer += 1
+            # for any reason the above try fails, we don't record
             except:
-                text.append('empty document')
-
-    ### TRANSFORM INTO JS FORMAT
-    # transform into pd.DataFrame
-    df_tmp = pd.DataFrame({'tweet_id':tweet_id, 'author':author, 'tweet_date': tweet_date, 'text': text},
-                          columns=['tweet_id','author','tweet_date','text'],
-                          index=tweet_id)
-
+                # here, you can do things like listing files that can't be parsed
+                # e.g. print(txt)
+                pass
+                
     # transform body into .json format
-    json_tmp = df_tmp.to_json(orient='index')
+    json_tmp = json.dumps(tweet_data)
 
     # transform into .js format that TopicFlow can read
     prefix = 'function populate_tweets_' + project_name + '(){\nvar tweet_data ='
     posfix = ';\nreadTweetJSON(tweet_data);\n}'
     doc_js = prefix + json_tmp + posfix
 
-
     ### WRITE
     # make a directory named after project_name
     if os.path.isdir(os.path.join(path_tf, 'data', project_name)) == False:
         os.mkdir(os.path.join(path_tf, 'data', project_name))
-
+        
     # write
     with open(os.path.join(path_tf, 'data', project_name, 'Doc.js'), 'w') as file:
         file.write(doc_js)
 
-    print('Doc.js created,             60% complete.')
+    print('\nDoc.js created,             20% complete.')
+    
+    return tweet_id_txt
 
 
-def transform_bins(project_name, path_doc, path_LDA):
+def transform_bins(project_name, path_doc, path_meta, path_LDA, tweet_id_txt):
     """
-    Transform LDA-genereted Topic-document matrixes and Topic-Term
+    Transform LDA-genereted Topic-document matrixes and Topic-word
     matrixes into JavaScript format that TopicFlow can read.
 
     Args:
@@ -253,10 +173,12 @@ def transform_bins(project_name, path_doc, path_LDA):
         path_doc     -- path of documents directory
         path_LDA     -- path of LDA main directory, this directory should
                         contain 3 sub-directories: Document_Topic_Matrix,
-                        Topic_Flow, and Topic_Term_Matrix
+                        Topic_Flow, and Topic_word_Matrix
+        tweet_id_txt -- a dictionary that maps document id with .txt file name
+                        generated by transform_doc     
 
-    Returns:
-        a JavaScript formatted string ready to be written as "Bins.js".
+    Outcome:
+        "Bins.js"
     """
 
     ### DEFINE month_list, READ DATA
@@ -280,26 +202,17 @@ def transform_bins(project_name, path_doc, path_LDA):
         bin_dict[str(month_ix)]['bin_id'] = month_ix
 
     # populate tweet_ids
-    # here we need input from df_list, specifically the lenth of each month
     for month_ix in range(len(month_list)):
-        bin_dict[str(month_ix)]['tweet_Ids'] = []
-    # two points recording the starting position of tweet_id of each month
-    lo,hi = 1,1
-    for month_ix in range(len(month_list)):
-        hi += len(df_list[month_ix])
-        for tweet_ix in range(lo,hi):
-            bin_dict[str(month_ix)]['tweet_Ids'].append(tweet_ix)
-        lo = hi
+        bin_dict[str(month_ix)]['tweet_Ids'] = tweet_id_txt[str(month_ix)]['id']
 
     # populate start_time & end_time
-    # here we need input from df_list, specifically the lenth of each month
+    # here we need input from df_list, specifically the length of each month
     # this part sorts out the earliest and latest time of a tweet in each month, and
     # transform them into "mm/dd/yy hh:mm" format
     for month_ix in range(len(month_list)):
-        bin_dict[str(month_ix)]['start_time'] = pd.to_datetime(df_list[month_ix].dateStamp).sort_values().apply(lambda x: str(x.month) + '/' + str(x.day) + '/' + str(x.year) + ' ' + str(x.hour) + ':' + str(x.minute)).tolist()[0]
+        bin_dict[str(month_ix)]['start_time'] = pd.to_datetime(df_list[month_ix].date).sort_values().apply(lambda x: str(x.month) + '/' + str(x.day) + '/' + str(x.year) + ' ' + str(x.hour) + ':' + str(x.minute)).tolist()[0]
     for month_ix in range(len(month_list)):
-        bin_dict[str(month_ix)]['end_time'] = pd.to_datetime(df_list[month_ix].dateStamp).sort_values().apply(lambda x: str(x.month) + '/' + str(x.day) + '/' + str(x.year) + ' ' + str(x.hour) + ':' + str(x.minute)).tolist()[-1]
-
+        bin_dict[str(month_ix)]['end_time'] = pd.to_datetime(df_list[month_ix].date).sort_values().apply(lambda x: str(x.month) + '/' + str(x.day) + '/' + str(x.year) + ' ' + str(x.hour) + ':' + str(x.minute)).tolist()[-1]
 
     # initiate topic_model
     for month_ix in range(len(month_list)):
@@ -308,90 +221,49 @@ def transform_bins(project_name, path_doc, path_LDA):
         bin_dict[str(month_ix)]['topic_model']['topic_doc'] = {}
         bin_dict[str(month_ix)]['topic_model']['doc_topic'] = {}
         bin_dict[str(month_ix)]['topic_model']['topic_word'] = {}
-        bin_dict[str(month_ix)]['topic_model']['topic_prob'] = {}
+        bin_dict[str(month_ix)]['topic_model']['topic_prob'] = []
 
-
-    ###  DATA TRANSFORMATION - 2: POPULATE topic_model
-
-    # to begin this section, create a DataFrame mapping Topic-doc.
-    # the documents in the df_topic_doc are not the same as in metadata.
-    # Thus, before pupulating 4 sub dictionaries, first we need to find
-    # all the overlapping documents
-
-    # step 1, creates a list of the starting position of each month's tweet_id
-    month_start_tweetIds = []
-    tweet_count = 0
+        
+    ### DATA TRANSFORMATION - 2: POPULATE topic_model
+    # topic_model is the hardest part. We need to populate them month by month,
+    # and one by one.
     for month_ix in range(len(month_list)):
-        month_start_tweetIds.append(tweet_count)
-        tweet_count += len(df_list[month_ix])
-
-    # step 2, iterate and find the overlapping documents of every month
-    for month_ix in range(len(month_list)):
-        doc_df_topic_doc = []
-        for i in df_topic_doc[month_ix].index.values:
-            doc_df_topic_doc.append(int(i[13:-4]))
-        overlap = set(doc_df_topic_doc) & set(df_list[month_ix]['k'].values)
-
-        # step 3, create a DataFrame mapping the overlapping documents and 10 topics
-        overlap_ix = []
-        ix_list = df_topic_doc[month_ix].index.tolist()
-        doc_year = df_topic_doc[0].index.values[0][4:8]
-        for item in overlap:
-            name = str(month_list[month_ix]) + '/' + doc_year + '_' + str(month_list[month_ix]) + '_' + str(item) + '.txt'
-            overlap_ix.append(ix_list.index(name))
-        df_topic_doc_overlap = df_topic_doc[month_ix].iloc[overlap_ix, : ].copy()
-
-        # pre-step 4, add tweet_Ids to df_topic_doc_overlap
-        overlap_tweetIds = []
-        for k in df_topic_doc_overlap.index.values:
-            name = int(k[13:-4])
-            name_ix = df_list[month_ix]['k'].tolist().index(name) + 1
-            name_ix += month_start_tweetIds[month_ix]
-            overlap_tweetIds.append(name_ix)
-        df_topic_doc_overlap['tweet_Ids'] = overlap_tweetIds
-
-        # now we have the overlapping documents, we can populate 4 sub dictionaries
-        # populate topic_prob
-        L = len(df_topic_doc[month_ix].columns)
-        for ix in range(L):
-            T = str(month_ix) + '_' + str(ix)
-            bin_dict[str(month_ix)]['topic_model']['topic_prob'][str(ix)] = T
-
-        # populate topic_doc
-        # create 10 topic keys
-        for ix in range(L):
-            T = str(month_ix) + '_' + str(ix)
-            bin_dict[str(month_ix)]['topic_model']['topic_doc'][T] = {}
-        # add doc values to these keys
-        for ix_2 in range(L):
-            T = str(month_ix) + '_' + str(ix_2)
-            col_score = df_topic_doc_overlap[str(ix_2 + 1)].values # there is +1 here because in the csv there is no column named '0'
-            col_score = np.around(col_score, 17)                 # reduce crazy long decimal points and scientific notations
-            col_k = df_topic_doc_overlap['tweet_Ids'].values
-            for ix_3 in range(len(col_score)):
-                bin_dict[str(month_ix)]['topic_model']['topic_doc'][T][str(col_k[ix_3])] = col_score[ix_3]
-
-        # populate doc_topic
-        for ix_4 in range(len(df_topic_doc_overlap)):
-            row_score = df_topic_doc_overlap.iloc[ix_4,:]
-            row_score = np.around(row_score, 17)
-            bin_dict[str(month_ix)]['topic_model']['doc_topic'][ str(int(row_score['tweet_Ids'])) ] = {}
-            for ix_5 in range(L):
-                name = str(month_ix) + '_' + str(ix_5)
-                bin_dict[str(month_ix)]['topic_model']['doc_topic'][ str(int(row_score['tweet_Ids'])) ][name] = row_score[ix_5]
-
-        # populate topic_word
-        for ix_6 in range(L):
-            name = str(month_ix) + '_' + str(ix_6)
+        overlap = set(df_topic_doc[month_ix].index.tolist()) & set(tweet_id_txt[str(month_ix)]['txt'])
+        overlap = list(overlap)
+        df_topic_doc_overlap = df_topic_doc[month_ix].copy().loc[overlap, :]
+        
+        # topic_prob & topic_doc
+        for prob in range(10):
+            bin_dict[str(month_ix)]['topic_model']['topic_prob'].append(str(month_ix) + '_' + str(prob))
+            # initiate topic_doc
+            bin_dict[str(month_ix)]['topic_model']['topic_doc'][str(month_ix) + '_' + str(prob)] = {}
+            overlap_id = [tweet_id_txt[str(month_ix)]['txt'].index(index_txtfile) for index_txtfile in df_topic_doc_overlap.index.tolist()]
+            overlap_id = [tweet_id_txt[str(month_ix)]['id'][index_tweetid] for index_tweetid in overlap_id]
+            for overlap_ix in range(len(overlap_id)):
+                bin_dict[str(month_ix)]['topic_model']['topic_doc'][str(month_ix) + '_' + str(prob)][str(overlap_id[overlap_ix])] = df_topic_doc_overlap[str(int(prob + 1))].tolist()[overlap_ix]
+        
+        # doc_topic
+        overlap_id = [tweet_id_txt[str(month_ix)]['txt'].index(index_txtfile) for index_txtfile in df_topic_doc_overlap.index.tolist()]
+        overlap_id = [tweet_id_txt[str(month_ix)]['id'][index_tweetid] for index_tweetid in overlap_id] 
+        for overlap_ix2 in range(len(overlap_id)):
+            row = df_topic_doc_overlap.iloc[overlap_ix2, :].tolist()
+            bin_dict[str(month_ix)]['topic_model']['doc_topic'][str(overlap_id[overlap_ix2])] = {}
+            for row_ix in range(len(row)):
+                bin_dict[str(month_ix)]['topic_model']['doc_topic'][str(overlap_id[overlap_ix2])][str(month_ix) + '_' + str(row_ix)] = row[row_ix]
+            
+        # topic_word
+        for topic_word_ix in range(10):
+            name = str(month_ix) + '_' + str(topic_word_ix)
             bin_dict[str(month_ix)]['topic_model']['topic_word'][name] = {}
-            topwords = df_topic_word[month_ix].iloc[ix_6].sort_values(ascending=False)[:10]
+            topwords = df_topic_word[month_ix].iloc[topic_word_ix].sort_values(ascending=False)[:10]
             topwords = np.around(topwords, 17)
             # we choose top 10 most frequent words, so here the range is 10
-            for ix_7 in range(10):
-                bin_dict[str(month_ix)]['topic_model']['topic_word'][name][topwords.index[ix_7]] = topwords.values[ix_7]
-
-        # delete df_topic_doc_overlap to aviod overwritting error
+            for topword_ix in range(10):
+                bin_dict[str(month_ix)]['topic_model']['topic_word'][name][topwords.index[topword_ix]] = topwords.values[topword_ix]
+        
+        # delete df_topic_doc_overlap to aviod overwritting error and save memory
         del df_topic_doc_overlap
+        
 
     ### TRANSFORM INTO JS FORMAT
     # transform bin_dict into an ordered dictionary
@@ -417,7 +289,7 @@ def transform_bins(project_name, path_doc, path_LDA):
     with open(os.path.join(path_tf, 'data', project_name, 'Bins.js'), 'w') as file:
         file.write(bins_js)
 
-    print('Bins.js created,            80% complete.')
+    print('Bins.js created,            40% complete.')
 
 
 def transform_topicSimilarity(project_name, path_LDA):
@@ -429,11 +301,10 @@ def transform_topicSimilarity(project_name, path_LDA):
         project_name -- name of the new project
         path_LDA     -- path of LDA main directory, this directory should
                         contain 3 sub-directories: Document_Topic_Matrix,
-                        Topic_Flow, and Topic_Term_Matrix
+                        Topic_Flow, and Topic_word_Matrix
 
-    Returns:
-        a JavaScript formatted string ready to be written as
-        "TopicSimilarity.js".
+    Outcome:
+        "TopicSimilarity.js"
     """
 
     ### DEFINE month_list, READ DATA
@@ -491,46 +362,217 @@ def transform_topicSimilarity(project_name, path_LDA):
     with open(os.path.join(path_tf, 'data', project_name, 'TopicSimilarity.js'), 'w') as file:
         file.write(topicSimilarity_js)
 
-    print('TopicSimilarity.js created, 100% complete.')
+    print('TopicSimilarity.js created, 60% complete.')
+
+
+def modify_html(project_name, path_tf):
+    """
+    Modify the content of \topicflow\index.html.
+    Two hand-added comments are used to locate the lines where new content can be
+    added. Executing the function would replace the existing index.html.
+    
+    Args:
+        project_name -- name of the new project
+        path_tf      -- path of topicflow directory
+    
+    Outcome:
+        a modified "index.html" that includes a new project
+    """
+    # read exisitng index.html and parse by lines
+    with open(os.path.join(path_tf, 'index.html'), 'r') as file:
+        html = file.read()
+
+    html_parse = html.split('\n')
+
+    # add new section after '<!-- add new section after this line -->'
+    ix = html_parse.index('<!-- add new section after this line -->')
+    new_section = '<script src="data/SHA/Doc.js"></script>\n<script src="data/SHA/Bins.js"></script>\n<script src="data/SHA/TopicSimilarity.js"></script>\n'.replace('SHA',project_name)
+    html_parse.insert(ix+1, new_section)
+
+    # add new selector after '<!-- add new dataset selector after this line -->'
+    ix = html_parse.index('\t\t\t<!-- add new dataset selector after this line -->')
+    new_selector = '\t\t\t<li id="SHA"><a href="#">SHA</a></li>'.replace('SHA', project_name)
+    html_parse.insert(ix+1, new_selector)
+
+    # replace existing index.html
+    html_combine = '\n'.join(html_parse)
+    os.remove(os.path.join(path_tf, 'index.html'))
+    with open(os.path.join(path_tf, 'index.html'), 'w') as file:
+        file.write(html_combine)
+
+    print('index.html modified,        80% complete.')
+
+
+def modify_controller(project_name, path_tf):
+    """
+    Modify the content of \topicflow\scripts\controller.js.
+    Two hand-added comments are used to locate the lines where new content can be
+    added. Executing the function would replace the existing controller.js.
+    
+    Args:
+        project_name -- name of the new project
+        path_tf      -- path of topicflow directory
+    
+    Outcome:
+        a modified "controller.js" that includes a new project
+    """
+    # read exisitng controller.js and parse by lines
+    with open(os.path.join(path_tf, 'scripts', 'controller.js'), 'r') as file:
+        controller = file.read()
+
+    controller_parse = controller.split('\n')
+
+    # add idToName after '// add new idToName'
+    ix = controller_parse.index('\t\t\t\t\t// add new idToName')
+    new_idToName = '\t\t\t\t\t"SHA":"SHA",'.replace('SHA', project_name)
+    controller_parse.insert(ix+1, new_idToName)
+
+    # add selected dataset after '// add new selected dataset here'
+    ix = controller_parse.index('\t// add new selected dataset here')
+    new_selectedDataset = '\tif (selected_data==="SHA") {\n\t\tpopulate_tweets_SHA();\n\t\tpopulate_bins_SHA();\n\t\tpopulate_similarity_SHA();\n\t}'.replace('SHA', project_name)
+    controller_parse.insert(ix+1, new_selectedDataset)
+
+    # replace existing controller.js
+    controller_combine = '\n'.join(controller_parse)
+    os.remove(os.path.join(path_tf, 'scripts', 'controller.js'))
+    with open(os.path.join(path_tf, 'scripts', 'controller.js'), 'w') as file:
+        file.write(controller_combine)
+
+    print('controller.js modified,     100% complete.')
+
+
+def del_project(project_name_delete):
+    """
+    Delete an existing project. Content of the project in index.html, 
+    controller.js, and data/<project> folder will be deleted. The base project 
+    "Full_Disclosure_2012" should not be deleted.
+    
+    Args:
+        project_name_delete -- name of the project that should be deleted
+    
+    Outcome:
+        Removal of an existing project or multiple existing projects.
+    """
+    ### DELETE CONTENT IN index.html
+    # read exisitng index.html and parse by lines
+    with open(os.path.join(path_tf, 'index.html'), 'r') as file:
+        html = file.read()
+    html_parse = html.split('\n')
+
+    # delete section after '<!-- add new section after this line -->'
+    ix_1 = html_parse.index('<!-- add new section after this line -->')
+    ix_2 = html_parse.index('<!-- end of adding new datasets. -->')
+    delete_ix = 0
+    for i_1 in range(ix_1, ix_2):
+        # make sure only the specified project is deleted, we don't want to delete other projects that have the this name in it
+        if project_name_delete in html_parse[i_1] and 'Doc.js' in html_parse[i_1] and len(html_parse[i_1]) == 36+len(project_name_delete):
+            delete_ix = i_1
+    for i_2 in range(4): # there are 4 lines for each project section, and we don't want to delete the end line
+        if not delete_ix == 0:
+            html_parse.pop(delete_ix)
+
+    # delete dataset selector after '<!-- add new dataset selector after this line -->'
+    ix_1 = html_parse.index('\t\t\t<!-- add new dataset selector after this line -->')
+    ix_2 = html_parse.index('\t\t\t<!-- end of adding new dataset selector -->')
+    for i_3 in range(ix_1, ix_2):
+        if 'id="' + project_name_delete + '"' in html_parse[i_3]:
+            html_parse.pop(i_3)
+    
+    # replace existing index.html
+    html_combine = '\n'.join(html_parse)
+    os.remove(os.path.join(path_tf, 'index.html'))
+    with open(os.path.join(path_tf, 'index.html'), 'w') as file:
+        file.write(html_combine)
+    
+    
+    ### DELETE CONTENT IN controller.js
+    # read exisitng controller.js and parse by lines
+    with open(os.path.join(path_tf, 'scripts', 'controller.js'), 'r') as file:
+        controller = file.read()
+    controller_parse = controller.split('\n')
+
+    # delete idToName after '// add new idToName'
+    ix_1 = controller_parse.index('\t\t\t\t\t// add new idToName')
+    ix_2 = controller_parse.index('\t\t\t\t\t"Full_Disclosure_2012":"Full_Disclosure_2012"')
+    for i_4 in range(ix_1, ix_2):
+        if '"' + project_name_delete + '"' in controller_parse[i_4]:
+            controller_parse.pop(i_4)
+
+    # delete selected dataset after '// add new selected dataset here'
+    ix_1 = controller_parse.index('\t// add new selected dataset here')
+    ix_2 = controller_parse.index('\t// end of adding new selected datasets')
+    delete_ix = 0
+    for i_5 in range(ix_1, ix_2):
+        if '"' + project_name_delete + '"' in controller_parse[i_5]:
+            delete_ix = i_5
+    for i_6 in range(5): # there are 5 lines for each selected dataset, and we don't want to delete the end line
+        if not delete_ix == 0:
+            controller_parse.pop(delete_ix)
+
+    # replace existing controller.js
+    controller_combine = '\n'.join(controller_parse)
+    os.remove(os.path.join(path_tf, 'scripts', 'controller.js'))
+    with open(os.path.join(path_tf, 'scripts', 'controller.js'), 'w') as file:
+        file.write(controller_combine)
+    
+    
+    ### DELETE data.<project_name_delete> FOLDER
+    # delete three .js files
+    for js_file in os.listdir(os.path.join(path_tf, 'data', project_name_delete)):
+        os.remove(os.path.join(path_tf, 'data', project_name_delete, js_file))
+    # delete project folder
+    os.rmdir(os.path.join(path_tf, 'data', project_name_delete))
 
 
 if __name__ == "__main__":
-    time_start = time.time()
-    
-    # path of topicflow, independent of operating system
+    # record the path of topicflow
     path_tf = sys.argv[0][:-6]
     if len(path_tf) == 0:
         path_tf = '.'
 
     ### ARGPARSE
-    parser = argparse.ArgumentParser(prog = 'TopicFlow Creator',
-                                     description = 'A program that lets you create a new project and transforms your data into TopicFlow readable format, or run an existing project.',
-                                     epilog = 'Then you can open a browser and type in localhost:8000 to see the visualization! When done, just stop the process in terminal.')
-    parser.add_argument('-n', '--new',  type = str,
-                        help = 'Enter the name of a new project, no space allowed.')
+    parser = argparse.ArgumentParser(prog = 'run.py',
+                                     description = 'A program that lets you create a new project and transforms your data into TopicFlow readable format, or just run TopicFlow and choose existing projects with the command "python run.py".',
+                                     epilog = 'Then you can open a browser and type in localhost:<port number> to see the visualization! When done, just stop the process in terminal.')
     parser.add_argument('-a', '--add', type = str, nargs = '+',
-                        help = 'Please specify the paths of [document files, LDA files], enclosing each in double quotes. If starting a new project, both paths should be specified. If running an existing project, no need to use this flag. EXAMPLE: -n "Trending" -a "E:\\...\\data\\docs" "E:\\...\\data\\LDA".')
+                        help = 'If adding a new project. Please specify all the following items: [the name of the project, path of document folder, path of document metadata folder, document extension, path of LDA folder], 5 items in total. Enclosing each in double quotes, and don\'t forget the dots. Please don\'t use space when naming. For the document extension, choose from [.reply.body.txt, .reply.body_no_signature.txt, .reply.body_tags.txt, .reply.title_body.txt, .reply.title_body_no_signature.txt]. If running an existing project, no need to use this flag. EXAMPLE: python run.py -a "FD2014" "E:\\...\\data\\docs" "E:\\...\\data\\docs_metadata" ".reply.body.txt" "E:\\...\\data\\LDA".')
+    parser.add_argument('-d', '--delete', type = str, nargs = '+',
+                        help = 'Delete one or multiple existing projects. Specify the name(s) of the project(s) that should be deleted in double quotes. The base project "Full_Disclosure_2012" should not be deleted. Single deletion example: python run.py -d "FD2014". Multiple deletion example: python run.py -d "FD2014" "FD2015".')
     args = parser.parse_args()
 
+    # delete an existing project, if true, end the outer if.
+    if args.delete:
+        for arg_del in args.delete:
+            if os.path.isdir(os.path.join(path_tf, 'data', arg_del)):
+                project_name_delete = arg_del
+                del_project(project_name_delete)
+        if len(args.delete) == 1:
+            print('Project successfully deleted, running TopicFlow now...')
+        elif len(args.delete) >= 1:
+            print('Projects successfully deleted, running TopicFlow now...')
     
-    if args.new:
-        project_name = args.new
-        path_doc = args.add[0]
-        path_LDA = args.add[1]
+    # add a new project
+    elif args.add:
+        project_name = args.add[0]
+        path_doc = args.add[1]
+        path_meta = args.add[2]
+        doc_extension = args.add[3]
+        path_LDA = args.add[4]
+        
+        time_start = time.time()
         
         if os.path.isdir(path_doc) and os.path.isdir(path_LDA):
+            print('\nData transformation started...')
+            tweet_id_txt = transform_doc(project_name, path_doc, path_meta, doc_extension)
+            transform_bins(project_name, path_doc, path_meta, path_LDA, tweet_id_txt)
+            transform_topicSimilarity(project_name, path_LDA)
             modify_html(project_name, path_tf)
             modify_controller(project_name, path_tf)
-            transform_doc(project_name, path_doc)
-            transform_bins(project_name, path_doc, path_LDA)
-            transform_topicSimilarity(project_name, path_LDA)
-
-
-    print('\nTotal time taken:', str(round(time.time() - time_start, 2)), 'seconds.\n')
+            print('\nTotal time taken:', str(round(time.time() - time_start, 2)), 'seconds.\n')
 
 
     ### INVOKE SERVER
-    PORT = 8000
+    PORT = np.random.randint(9000, 10000)
 
     # change the working directory to topicflow
     os.chdir(path_tf)
