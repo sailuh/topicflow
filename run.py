@@ -50,7 +50,7 @@ def read_data(df_list=False, df_topic_doc=False, df_topic_word=False, df_topic_s
         df_topic_doc = []
         for month in month_list:
             filename = month + ".csv"
-            path_file = os.path.join(path_LDA, "Document_Topic_Matrix", filename) 
+            path_file = os.path.join(path_dtm, filename) 
             df_topic_doc.append(
                 pd.read_csv(path_file,
                             index_col= 0)
@@ -61,7 +61,7 @@ def read_data(df_list=False, df_topic_doc=False, df_topic_word=False, df_topic_s
         df_topic_word = []
         for month in month_list:
             filename = month + ".csv"
-            path_file = os.path.join(path_LDA, "Topic_Term_Matrix", filename) 
+            path_file = os.path.join(path_ttm, filename) 
             df_topic_word.append(
                 pd.read_csv(path_file,
                             index_col= 0)
@@ -69,7 +69,7 @@ def read_data(df_list=False, df_topic_doc=False, df_topic_word=False, df_topic_s
         return df_topic_word
 
     if df_topic_sim == True:
-        path_file = os.path.join(path_LDA, "Topic_Flow", "topic_flow.csv") 
+        path_file = os.path.join(path_sim, "topic_flow.csv") 
         df_topic_sim = pd.read_csv(path_file)
         return df_topic_sim
 
@@ -163,7 +163,7 @@ def transform_doc(project_name, path_doc, path_meta, doc_extension):
     return tweet_id_txt
 
 
-def transform_bins(project_name, path_doc, path_meta, path_LDA, tweet_id_txt):
+def transform_bins(project_name, path_doc, path_meta, path_dtm, path_ttm, path_sim, tweet_id_txt):
     """
     Transform LDA-genereted Topic-document matrixes and Topic-word
     matrixes into JavaScript format that TopicFlow can read.
@@ -292,7 +292,7 @@ def transform_bins(project_name, path_doc, path_meta, path_LDA, tweet_id_txt):
     print('Bins.js created,            40% complete.')
 
 
-def transform_topicSimilarity(project_name, path_LDA):
+def transform_topicSimilarity(project_name, path_sim):
     """
     Transform topic similarity matrix into JavaScript format
     that TopicFlow can read.
@@ -340,7 +340,7 @@ def transform_topicSimilarity(project_name, path_LDA):
         for row_ix in range(len(df_tmp)):
             source = month_ix*10 + int(df_tmp[mm1].values[row_ix]) - 1
             target = (month_ix+1)*10 + int(df_tmp[mm2].values[row_ix]) - 1
-            score = df_tmp[sim].values[row_ix] * 200 # 200 makes it neither too thin nor too thick
+            score = df_tmp[sim].values[row_ix] * 100 # 100 makes it neither too thin nor too thick
             link_tmp = {}
             link_tmp['source'], link_tmp['target'], link_tmp['value'] = source, target, score
             links.append(link_tmp)
@@ -532,10 +532,10 @@ if __name__ == "__main__":
 
     ### ARGPARSE
     parser = argparse.ArgumentParser(prog = 'run.py',
-                                     description = 'A program that lets you create a new project and transforms your data into TopicFlow readable format, or just run TopicFlow and choose existing projects with the command "python run.py".',
-                                     epilog = 'Then you can open a browser and type in localhost:<port number> to see the visualization! When done, just stop the process in terminal.')
+                                     description = 'This script allows you to add PERCEIVE\'s topicflow R package output data into topicflowviz format and visualize it in localhost. Added projects can be later visualized using run.py, unless explicitly deleted.',
+                                     epilog = 'Example of adding a new project: python run.py -a "FD2014" "/**/2014.parsed" "/**/2014.metadata" ".reply.body.txt" "/**/dtm" "/**/ttm" "/**/sim"')
     parser.add_argument('-a', '--add', type = str, nargs = '+',
-                        help = 'If adding a new project. Please specify all the following items: [the name of the project, path of document folder, path of document metadata folder, document extension, path of LDA folder], 5 items in total. Enclosing each in double quotes, and don\'t forget the dots. Please don\'t use space when naming. For the document extension, choose from [.reply.body.txt, .reply.body_no_signature.txt, .reply.body_tags.txt, .reply.title_body.txt, .reply.title_body_no_signature.txt]. If running an existing project, no need to use this flag. EXAMPLE: python run.py -a "FD2014" "E:\\...\\data\\docs" "E:\\...\\data\\docs_metadata" ".reply.body.txt" "E:\\...\\data\\LDA".')
+                        help = 'If adding a new project. Please specify all the following items, an example is provided for each item: [project name - "FD2014", path of document folder - "/**/2014.parsed", path of document metadata folder - "/**/2014.metadata", document extension - ".reply.body.txt", path of Document Topic Matrix folder - "/**/dtm", path of Topic Term Matrix folder - "/**/ttm", path of Topic Flow Similarity folder - "/**/sim"], 7 items in total.')
     parser.add_argument('-d', '--delete', type = str, nargs = '+',
                         help = 'Delete one or multiple existing projects. Specify the name(s) of the project(s) that should be deleted in double quotes. The base project "Full_Disclosure_2012" should not be deleted. Single deletion example: python run.py -d "FD2014". Multiple deletion example: python run.py -d "FD2014" "FD2015".')
     args = parser.parse_args()
@@ -557,15 +557,17 @@ if __name__ == "__main__":
         path_doc = args.add[1]
         path_meta = args.add[2]
         doc_extension = args.add[3]
-        path_LDA = args.add[4]
+        path_dtm = args.add[4]
+        path_ttm = args.add[5]
+        path_sim = args.add[6]
         
         time_start = time.time()
         
-        if os.path.isdir(path_doc) and os.path.isdir(path_LDA):
+        if os.path.isdir(path_doc) and os.path.isdir(path_meta) and os.path.isdir(path_dtm) and os.path.isdir(path_ttm) and os.path.isdir(path_sim):
             print('\nData transformation started...')
             tweet_id_txt = transform_doc(project_name, path_doc, path_meta, doc_extension)
-            transform_bins(project_name, path_doc, path_meta, path_LDA, tweet_id_txt)
-            transform_topicSimilarity(project_name, path_LDA)
+            transform_bins(project_name, path_doc, path_meta, path_dtm, path_ttm, path_sim, tweet_id_txt)
+            transform_topicSimilarity(project_name, path_sim)
             modify_html(project_name, path_tf)
             modify_controller(project_name, path_tf)
             print('\nTotal time taken:', str(round(time.time() - time_start, 2)), 'seconds.\n')

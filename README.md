@@ -8,7 +8,7 @@ The original Github project includes all the necessary code to display visualiza
 
 This fork is a work-in-progress to create the data scripts pipeline to reuse TopicFlow for any other corpus besides Tweets.
 
-This version of TopicFlow can be utilized to visualize Full Disclosure or Bugtraq datasets for [PERCEIVE](https://github.com/sailuh/perceive). A detailed notebook of how the data transformation pipeline works can be found in `Data Transformation Pipeline for Full Disclosure- a Notebook`.
+This version of TopicFlow can be utilized to visualize Full Disclosure or Bugtraq datasets for [PERCEIVE](https://github.com/sailuh/perceive). A detailed notebook of how the data transformation pipeline works can be found in [Data Transformation Pipeline for Full Disclosure- a Notebook](https://github.com/estepona/topicflow/blob/2-data-transformation-pipeline-for-full-disclosure/Data%20Transformation%20Pipeline%20for%20Full%20Disclosure-%20a%20Notebook.ipynb).
 
 ## Usage
 
