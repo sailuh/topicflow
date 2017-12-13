@@ -960,7 +960,7 @@ function populateVisualization(selected_data) {
 
 	var idToName = {
 					// add new idToName
-					"Full_Disclosure_2012":"Full_Disclosure_2012"
+					"Full_Disclosure_2012":"Full Disclosure 2012"
 					}
 
 	// Populate the interface with the selected dataset

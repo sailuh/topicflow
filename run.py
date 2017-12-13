@@ -36,15 +36,26 @@ def read_data(df_list=False, df_topic_doc=False, df_topic_word=False, df_topic_t
         similarity scores of a year.
     """
     month_list = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    month_index_list = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
 
     if df_list == True:
         df_list = []
-        for folder in os.listdir(path_meta):
-            path_folder = os.path.join(path_meta, folder)
-            if os.path.isdir(path_folder):
-                file_csv = [x for x in os.listdir(path_folder) if x.endswith('.csv')][0]
-                path_csv = os.path.join(path_folder, file_csv)
-                df_list.append(pd.read_csv(path_csv))
+        for month_index in month_index_list:
+            for folder in os.listdir(path_meta):
+                if folder.endswith('_' + month_index):
+                    path_folder = os.path.join(path_meta, folder)
+                    file_csv = [x for x in os.listdir(path_folder) if x.endswith('.csv')][0]
+                    path_csv = os.path.join(path_folder, file_csv)
+                    df_list.append(pd.read_csv(path_csv))
+        # original code
+        # for folder in os.listdir(path_meta):
+        #     path_folder = os.path.join(path_meta, folder)
+        #     if os.path.isdir(path_folder):
+        #         file_csv = [x for x in os.listdir(path_folder) if x.endswith('.csv')][0]
+        #         path_csv = os.path.join(path_folder, file_csv)
+        #         df_list.append(pd.read_csv(path_csv))
+        # debug
+        print('len of df_list', len(df_list))
         return df_list
 
     if df_topic_doc == True:
@@ -56,7 +67,7 @@ def read_data(df_list=False, df_topic_doc=False, df_topic_word=False, df_topic_t
                 pd.read_csv(path_file,
                             index_col= 0)
             )
-        # modify the index to fit the pipeline
+       # modify the index to fit the pipeline
         df_topic_doc_modified = []
         for month_ix in range(len(month_list)):
             df_tmp = df_topic_doc[month_ix].copy()
@@ -64,6 +75,8 @@ def read_data(df_list=False, df_topic_doc=False, df_topic_word=False, df_topic_t
                 df_tmp.index = [x + '.txt' for x in df_tmp.index.tolist()]
             df_topic_doc_modified.append(df_tmp)
             del df_tmp
+        # debug
+        print('len of df_topic_doc_modified', len(df_topic_doc_modified))
         return df_topic_doc_modified
 
     if df_topic_word == True:
@@ -75,10 +88,14 @@ def read_data(df_list=False, df_topic_doc=False, df_topic_word=False, df_topic_t
                 pd.read_csv(path_file,
                             index_col= 0)
             )
+        # debug
+        print('len of df_topic_word', len(df_topic_word))
         return df_topic_word
 
     if df_topic_tf == True:
         df_topic_tf = pd.read_csv(path_topic_tf)
+        # debug
+        print('len of df_topic_tf', len(df_topic_tf))
         return df_topic_tf
 
 
@@ -99,8 +116,9 @@ def transform_doc(project_name, path_doc, path_meta, doc_extension):
         "Doc.js"
     """
 
-    ### READ METADATA
+    ### READ METADATA and initiate month index list
     df_list = read_data(df_list=True)
+    month_index_list = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
 
 
     ### DATA TRANSFORMATION
@@ -111,11 +129,24 @@ def transform_doc(project_name, path_doc, path_meta, doc_extension):
     
     # find documents
     id_pointer = 1     # tweet_id starts with 1
-    for month_ix, folder in enumerate(os.listdir(path_doc)):
+    # store the list of sub-folders in order for each month, remove any folder that isn't what we need
+    # for example, a file like .DS_store can do huge damage to our pipeline
+    path_docs = []
+    for subfolder_ix in month_index_list:
+        for subfolder in os.listdir(path_doc):
+            if subfolder.endswith('_' + subfolder_ix):
+                path_docs.append(subfolder)
+    # debug
+    print(path_docs)
+    # debug - count of unparseable files
+    c = 0
+    for month_ix, folder in enumerate(path_docs):
+        # debug
+        print('month_ix', month_ix, ' folder', folder)
         tweet_id_txt[str(month_ix)] = {}
         tweet_id_txt[str(month_ix)]['id'] = []
         tweet_id_txt[str(month_ix)]['txt'] = []
-        path_folder = os.path.join(path_doc, folder)
+        path_folder = os.path.join(path_doc, folder) 
         # read .txt files with the user-specified extension
         txt_list = [x for x in os.listdir(path_folder) if x.endswith(doc_extension)]
         # find .txt files that match their metadata entries
@@ -147,7 +178,10 @@ def transform_doc(project_name, path_doc, path_meta, doc_extension):
             except:
                 # here, you can do things like listing files that can't be parsed
                 # e.g. print(txt)
-                pass
+                c += 1
+    # debug
+    print('counts: parsed %d, unparseable %d' % (id_pointer, c))
+    print('parsed / unparseable = ', id_pointer / c)
                 
     # transform body into .json format
     json_tmp = json.dumps(tweet_data)
@@ -400,7 +434,7 @@ def modify_html(project_name, path_tf):
 
     # add new selector after '<!-- add new dataset selector after this line -->'
     ix = html_parse.index('\t\t\t<!-- add new dataset selector after this line -->')
-    new_selector = '\t\t\t<li id="SHA"><a href="#">SHA</a></li>'.replace('SHA', project_name)
+    new_selector = '\t\t\t<li id="{}"><a href="#">{}</a></li>'.format(project_name, project_name.replace('_', ' '))
     html_parse.insert(ix+1, new_selector)
 
     # replace existing index.html
@@ -433,7 +467,7 @@ def modify_controller(project_name, path_tf):
 
     # add idToName after '// add new idToName'
     ix = controller_parse.index('\t\t\t\t\t// add new idToName')
-    new_idToName = '\t\t\t\t\t"SHA":"SHA",'.replace('SHA', project_name)
+    new_idToName = '\t\t\t\t\t"{}":"{}",'.format(project_name, project_name.replace('_', ' '))
     controller_parse.insert(ix+1, new_idToName)
 
     # add selected dataset after '// add new selected dataset here'
@@ -502,7 +536,7 @@ def del_project(project_name_delete):
 
     # delete idToName after '// add new idToName'
     ix_1 = controller_parse.index('\t\t\t\t\t// add new idToName')
-    ix_2 = controller_parse.index('\t\t\t\t\t"Full_Disclosure_2012":"Full_Disclosure_2012"')
+    ix_2 = controller_parse.index('\t\t\t\t\t"Full_Disclosure_2012":"Full Disclosure 2012"')
     for i_4 in range(ix_1, ix_2):
         if '"' + project_name_delete + '"' in controller_parse[i_4]:
             controller_parse.pop(i_4)
@@ -542,23 +576,34 @@ if __name__ == "__main__":
     ### ARGPARSE
     parser = argparse.ArgumentParser(prog = 'run.py',
                                      description = 'This script allows you to add PERCEIVE\'s topicflow R package output data into topicflowviz format and visualize it in localhost. Added projects can be later visualized using run.py, unless explicitly deleted.',
-                                     epilog = 'Example of adding a new project: python run.py -a "FD2014" "/**/2014.parsed" "/**/2014.metadata" ".reply.body.txt" "/**/dtm" "/**/ttm" "/**/sim"')
+                                     epilog = 'Example of adding a new project: python run.py -a "FD2014" "/**/2014.parsed" "/**/2014.metadata" ".reply.body.txt" "/**/dtm" "/**/ttm" "/**/topic_flow.csv"')
     parser.add_argument('-a', '--add', type = str, nargs = '+',
-                        help = 'If adding a new project. Please specify all the following items, an example is provided for each item: [project name - "FD2014", path of document folder - "/**/2014.parsed", path of document metadata folder - "/**/2014.metadata", document extension - ".reply.body.txt", path of Document Topic Matrix folder - "/**/dtm", path of Topic Term Matrix folder - "/**/ttm", path of Topic Flow Similarity file - "/**/tf"], 7 items in total.')
+                        help = 'If adding a new project. Please specify all the following items, an example is provided for each item: [project name - "FD2014", path of document folder - "/**/2014.parsed", path of document metadata folder - "/**/2014.metadata", document extension - ".reply.body.txt", path of Document Topic Matrix folder - "/**/dtm", path of Topic Term Matrix folder - "/**/ttm", path of Topic Flow Similarity file - "/**/topic_flow.csv"], 7 items in total.')
     parser.add_argument('-d', '--delete', type = str, nargs = '+',
                         help = 'Delete one or multiple existing projects. Specify the name(s) of the project(s) that should be deleted in double quotes. The base project "Full_Disclosure_2012" should not be deleted. Single deletion example: python run.py -d "FD2014". Multiple deletion example: python run.py -d "FD2014" "FD2015".')
+    parser.add_argument('-s', '--show', help='Show existing projects',
+                    action="store_true")
     args = parser.parse_args()
 
+    # show existing projects
+    if args.show:
+        existing_projects = []
+        data_dir = os.path.join(path_tf, 'data')
+        for existing_project in os.listdir(data_dir):
+            if os.path.isdir(os.path.join(path_tf, 'data', existing_project)):
+                existing_projects.append(existing_project.replace('_', ' '))
+        print('Existing projects:\n', existing_projects)
+
     # delete an existing project, if true, end the outer if.
-    if args.delete:
+    elif args.delete:
         for arg_del in args.delete:
-            if os.path.isdir(os.path.join(path_tf, 'data', arg_del)):
-                project_name_delete = arg_del
+            if os.path.isdir(os.path.join(path_tf, 'data', arg_del.replace(' ', '_'))):
+                project_name_delete = arg_del.replace(' ', '_')
                 del_project(project_name_delete)
         if len(args.delete) == 1:
-            print('Project successfully deleted, running TopicFlow now...')
+            print('Project successfully deleted.')
         elif len(args.delete) >= 1:
-            print('Projects successfully deleted, running TopicFlow now...')
+            print('Projects successfully deleted.')
     
     # add a new project
     elif args.add:
@@ -569,6 +614,24 @@ if __name__ == "__main__":
         path_dtm = args.add[4]
         path_ttm = args.add[5]
         path_topic_tf = args.add[6]
+
+        # replace spaces in the project name with underlines
+        project_name = project_name.replace(' ', '_')
+
+        # change '~' to path 
+        path_doc = os.path.expanduser(path_doc)
+        path_meta = os.path.expanduser(path_meta)
+        path_dtm = os.path.expanduser(path_dtm)
+        path_ttm = os.path.expanduser(path_ttm)
+        path_topic_tf = os.path.expanduser(path_topic_tf)
+        
+        # debug
+        # print(
+        #       os.path.isdir(path_doc),
+        #       os.path.isdir(path_meta),
+        #       os.path.isdir(path_dtm),
+        #       os.path.isdir(path_ttm),
+        #       os.path.isfile(path_topic_tf))
         
         time_start = time.time()
         
@@ -580,16 +643,31 @@ if __name__ == "__main__":
             modify_html(project_name, path_tf)
             modify_controller(project_name, path_tf)
             print('\nTotal time taken:', str(round(time.time() - time_start, 2)), 'seconds.\n')
+        else:
+            print('\nData transformation failed, showing the existing projects...')
 
 
-    ### INVOKE SERVER
-    PORT = np.random.randint(9000, 10000)
+        ### INVOKE SERVER
+        PORT = np.random.randint(9000, 10000)
 
-    # change the working directory to topicflow
-    os.chdir(path_tf)
+        # change the working directory to topicflow
+        os.chdir(path_tf)
 
-    Handler = http.server.SimpleHTTPRequestHandler
+        Handler = http.server.SimpleHTTPRequestHandler
 
-    with socketserver.TCPServer(("", PORT), Handler) as httpd:
-        print("serving at port", PORT)
-        httpd.serve_forever()
+        with socketserver.TCPServer(("", PORT), Handler) as httpd:
+            print("serving at port", PORT)
+            httpd.serve_forever()
+
+    else:
+        ### INVOKE SERVER
+        PORT = np.random.randint(9000, 10000)
+
+        # change the working directory to topicflow
+        os.chdir(path_tf)
+
+        Handler = http.server.SimpleHTTPRequestHandler
+
+        with socketserver.TCPServer(("", PORT), Handler) as httpd:
+            print("serving at port", PORT)
+            httpd.serve_forever()
