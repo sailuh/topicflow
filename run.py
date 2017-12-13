@@ -47,15 +47,6 @@ def read_data(df_list=False, df_topic_doc=False, df_topic_word=False, df_topic_t
                     file_csv = [x for x in os.listdir(path_folder) if x.endswith('.csv')][0]
                     path_csv = os.path.join(path_folder, file_csv)
                     df_list.append(pd.read_csv(path_csv))
-        # original code
-        # for folder in os.listdir(path_meta):
-        #     path_folder = os.path.join(path_meta, folder)
-        #     if os.path.isdir(path_folder):
-        #         file_csv = [x for x in os.listdir(path_folder) if x.endswith('.csv')][0]
-        #         path_csv = os.path.join(path_folder, file_csv)
-        #         df_list.append(pd.read_csv(path_csv))
-        # debug
-        print('len of df_list', len(df_list))
         return df_list
 
     if df_topic_doc == True:
@@ -75,8 +66,6 @@ def read_data(df_list=False, df_topic_doc=False, df_topic_word=False, df_topic_t
                 df_tmp.index = [x + '.txt' for x in df_tmp.index.tolist()]
             df_topic_doc_modified.append(df_tmp)
             del df_tmp
-        # debug
-        print('len of df_topic_doc_modified', len(df_topic_doc_modified))
         return df_topic_doc_modified
 
     if df_topic_word == True:
@@ -88,14 +77,10 @@ def read_data(df_list=False, df_topic_doc=False, df_topic_word=False, df_topic_t
                 pd.read_csv(path_file,
                             index_col= 0)
             )
-        # debug
-        print('len of df_topic_word', len(df_topic_word))
         return df_topic_word
 
     if df_topic_tf == True:
         df_topic_tf = pd.read_csv(path_topic_tf)
-        # debug
-        print('len of df_topic_tf', len(df_topic_tf))
         return df_topic_tf
 
 
@@ -136,13 +121,8 @@ def transform_doc(project_name, path_doc, path_meta, doc_extension):
         for subfolder in os.listdir(path_doc):
             if subfolder.endswith('_' + subfolder_ix):
                 path_docs.append(subfolder)
-    # debug
-    print(path_docs)
-    # debug - count of unparseable files
-    c = 0
+
     for month_ix, folder in enumerate(path_docs):
-        # debug
-        print('month_ix', month_ix, ' folder', folder)
         tweet_id_txt[str(month_ix)] = {}
         tweet_id_txt[str(month_ix)]['id'] = []
         tweet_id_txt[str(month_ix)]['txt'] = []
@@ -178,11 +158,8 @@ def transform_doc(project_name, path_doc, path_meta, doc_extension):
             except:
                 # here, you can do things like listing files that can't be parsed
                 # e.g. print(txt)
-                c += 1
-    # debug
-    print('counts: parsed %d, unparseable %d' % (id_pointer, c))
-    print('parsed / unparseable = ', id_pointer / c)
-                
+                pass
+    
     # transform body into .json format
     json_tmp = json.dumps(tweet_data)
 
@@ -624,14 +601,6 @@ if __name__ == "__main__":
         path_dtm = os.path.expanduser(path_dtm)
         path_ttm = os.path.expanduser(path_ttm)
         path_topic_tf = os.path.expanduser(path_topic_tf)
-        
-        # debug
-        # print(
-        #       os.path.isdir(path_doc),
-        #       os.path.isdir(path_meta),
-        #       os.path.isdir(path_dtm),
-        #       os.path.isdir(path_ttm),
-        #       os.path.isfile(path_topic_tf))
         
         time_start = time.time()
         
