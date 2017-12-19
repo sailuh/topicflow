@@ -101,7 +101,7 @@ def transform_doc(project_name, path_doc, path_meta, doc_extension):
         "Doc.js"
     """
 
-    ### READ METADATA and initiate month index list
+    ### READ METADATA and INITIATE MONTH INDEX LIST
     df_list = read_data(df_list=True)
     month_index_list = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
 
@@ -131,13 +131,13 @@ def transform_doc(project_name, path_doc, path_meta, doc_extension):
         txt_list = [x for x in os.listdir(path_folder) if x.endswith(doc_extension)]
         # find .txt files that match their metadata entries
         for txt in txt_list:
-            txt_entry_elements = txt.split('.')[0].split('_') # looks like ['2005', 'Jan', '0']
-            txt_entry_elements[1] = folder[-2:]               # looks like ['2005', '01', '0']
-            txt_entry = '_'.join(txt_entry_elements)          # looks like '2005_01_0', use this to find document metadata in .csv file
-            # only make a record if there's a match between .txt file and metadata,
+            txt_entry_elements = txt.split('.')[0].split('_')  # looks like ['2005', 'Jan', '0']
+            txt_entry_elements[1] = folder[-2:]                # looks like ['2005', '01', '0']
+            txt_entry = '_'.join(txt_entry_elements)           # looks like '2005_01_0', use this to find document metadata in .csv file
+            # only record an entry if there's a match between .txt file and metadata,
             # and the file is readable.
             try:
-                row = df_list[month_ix][df_list[month_ix]['id'] == txt_entry]
+                row = df_list[month_ix][df_list[month_ix]['id'] == txt_entry]  # the row of one text file in metadata
                 author = row['author'].values[0]
                 date = pd.to_datetime(row['date']).apply(lambda x: str(x.month) + '/' + str(x.day) + '/' + str(x.year) + ' ' + str(x.hour) + ':' + str(x.minute)).values[0]
                 with open(os.path.join(path_folder, txt), 'r',
@@ -154,7 +154,7 @@ def transform_doc(project_name, path_doc, path_meta, doc_extension):
                 tweet_data[str(id_pointer)]['text'] = text
                 
                 id_pointer += 1
-            # for any reason the above try fails, we don't record
+            # if for any reason the above "try" fails, we don't record
             except:
                 # here, you can do things like listing files that can't be parsed
                 # e.g. print(txt)
@@ -168,8 +168,9 @@ def transform_doc(project_name, path_doc, path_meta, doc_extension):
     posfix = ';\nreadTweetJSON(tweet_data);\n}'
     doc_js = prefix + json_tmp + posfix
 
+
     ### WRITE
-    # make a directory named after project_name
+    # make a directory named after the project name
     if os.path.isdir(os.path.join(path_tf, 'data', project_name)) == False:
         os.mkdir(os.path.join(path_tf, 'data', project_name))
         
@@ -184,8 +185,8 @@ def transform_doc(project_name, path_doc, path_meta, doc_extension):
 
 def transform_bins(project_name, path_doc, path_meta, path_dtm, path_ttm, path_topic_tf, tweet_id_txt):
     """
-    Transform LDA-genereted Topic-document matrixes and Topic-word
-    matrixes into JavaScript format that TopicFlow can read.
+    Transform LDA-genereted Topic-document matrixes and Topic-word matrixes 
+    into JavaScript format that TopicFlow can read.
 
     Args:
         project_name  --  name of the new project
@@ -318,10 +319,8 @@ def transform_topicSimilarity(project_name, path_topic_tf):
     that TopicFlow can read.
 
     Args:
-        project_name -- name of the new project
-        path_LDA     -- path of LDA main directory, this directory should
-                        contain 3 sub-directories: Document_Topic_Matrix,
-                        Topic_Flow, and Topic_word_Matrix
+        project_name  -- name of the new project
+        path_topic_tf -- path of topicflow similarity file
 
     Outcome:
         "TopicSimilarity.js"
@@ -559,7 +558,7 @@ if __name__ == "__main__":
     parser.add_argument('-d', '--delete', type = str, nargs = '+',
                         help = 'Delete one or multiple existing projects. Specify the name(s) of the project(s) that should be deleted in double quotes. The base project "Full_Disclosure_2012" should not be deleted. Single deletion example: python run.py -d "FD2014". Multiple deletion example: python run.py -d "FD2014" "FD2015".')
     parser.add_argument('-s', '--show', help='Show existing projects',
-                    action="store_true")
+                        action="store_true")
     args = parser.parse_args()
 
     # show existing projects
@@ -613,7 +612,7 @@ if __name__ == "__main__":
             modify_controller(project_name, path_tf)
             print('\nTotal time taken:', str(round(time.time() - time_start, 2)), 'seconds.\n')
         else:
-            print('\nData transformation failed, showing the existing projects...')
+            print('\nData transformation failed because of wrong path(s) in the arguments, showing the existing projects...')
 
 
         ### INVOKE SERVER
