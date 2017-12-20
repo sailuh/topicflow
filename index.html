@@ -19,21 +19,12 @@
 <script type="text/javascript" src="scripts/TopicModel.js"></script>
 <script type="text/javascript" src="scripts/TopicSimilarityMap.js"></script>
 
-<script src="data/ModernFamily/Tweet.json"></script>
-<script src="data/ModernFamily/Bins.json"></script>
-<script src ="data/ModernFamily/TopicSimilarity.json"></script>
+<script src="data/Full_Disclosure_2012/Doc.js"></script>
+<script src="data/Full_Disclosure_2012/Bins.js"></script>
+<script src ="data/Full_Disclosure_2012/TopicSimilarity.js"></script>
 
-<script src="data/Debate/Tweet.json"></script>
-<script src="data/Debate/Bins.json"></script>
-<script src ="data/Debate/TopicSimilarity.json"></script>
-
-<script src="data/CHI/Tweet.json"></script>
-<script src="data/CHI/Bins.json"></script>
-<script src ="data/CHI/TopicSimilarity.json"></script>
-
-<script src="data/Sandy/Tweet.json"></script>
-<script src="data/Sandy/Bins.json"></script>
-<script src ="data/Sandy/TopicSimilarity.json"></script>
+<!-- add new section after this line -->
+<!-- end of adding new datasets. -->
 
 <link type="text/css" rel="stylesheet" href="css/960grid.css">
 <link rel="stylesheet" href="http://code.jquery.com/ui/1.9.0/themes/smoothness/jquery-ui.css" />
@@ -55,28 +46,26 @@
 
 <!-- DATASET SELECTOR DIV -->
 <div class="absolute-div">
-	<div id="selectbox_datasets">	
+	<div id="selectbox_datasets">
 		<div id="title" class="panel_name">Select a dataset... <span id="close_select" class="title_link">Close</span></div>
 		<ul id="popup_data_selector">
-			<li id="ModernFamily"><a href="#">Modern Family</a></li>
-			<li id="debate"><a href="#">Debate and Obama</a></li>
-			<li id="chi"><a href="#">CHI Conference</a></li>
-			<li id="sandy"><a href="#">Sandy and NJ</a></li>
-			<!--<li id="load_new"><a href="#">Load new...</a></li>-->
+			<li id="Full_Disclosure_2012"><a href="#">Full Disclosure 2012</a></li>
+			<!-- add new dataset selector after this line -->
+			<!-- end of adding new dataset selector -->
 		</ul>
 	</div>
 </div>
 
 <!-- ABOUT DIV -->
 <div class="absolute-div">
-	<div id="about-popup" style="display:none;">	
+	<div id="about-popup" style="display:none;">
 		<div id="title" class="panel_name">About TopicFlow <span id="close_about" class="title_link">Close</span></div>
 		<div id="about-div" class="panel_contents">
 			TopicFlow is a tool that visualizes
 the results of automatic topic detection and topic alignment
 between sets of tweets over time. <br />
 <br />
-This tool was initially developed as a team project for the Fall 2012 semester, class CMSC 734 Information Visualization, 
+This tool was initially developed as a team project for the Fall 2012 semester, class CMSC 734 Information Visualization,
 taught by Prof. Ben Shneiderman for the Department of Computer Science at the University of Maryland<br>
 Team members:
 <ul>
@@ -128,7 +117,7 @@ The work was then continued by Sana Malik and Alison Smith resulting in two addi
 				<div class="panel_contents">
 					<label for="topic_size">Topic Size: </label> <span id="topic_size"></span>
 					<div id="topic_size_slider"></div>
-				
+
 					<label for="topic_type">Topic Type: </label> <span id="topic_type"></span>
 					<fieldset id="topic_type_checkboxes">
 						<span><input type="checkbox" class="checkall" value="all" checked="yes"/> <span class="all type_option">Select/Unselect All</span></span><br />
@@ -140,10 +129,10 @@ The work was then continued by Sana Malik and Alison Smith resulting in two addi
 
 					<label for="similarity_weight">Similarity Weight: </label> <span id="similarity_weight"></span>
 					<div id="similarity_weight_slider"></div>
-				
+
 				</div>
 			</div>
-			
+
 			<div class="panel_name"><span class="panel_title" id="topics_title">Topics</span><span class="title_link" id="view_all">Deselect Topic</span></div>
 			<div class="panel_contents">
 				<center><input type="text" title="Search for word..." id="topic_searchbox" /></center>
@@ -157,7 +146,7 @@ The work was then continued by Sana Malik and Alison Smith resulting in two addi
 			</div>
 		</div>
 		<div class="grid_3 omega viz_panel" id="tweet_list_panel">
-			<div class="panel_name" id="tweet_list_title">Tweets</div>
+			<div class="panel_name" id="tweet_list_title">DOCUMENTS</div>
 			<div class="panel_contents">
 				<div id="tweet_list"></div>
 			</div>
