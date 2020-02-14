@@ -36,7 +36,7 @@ def read_data(df_list=False, df_topic_doc=False, df_topic_word=False, df_topic_t
         similarity scores of a year.
     """
     month_list = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-    month_index_list = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
+    month_index_list = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
     if df_list == True:
         df_list = []
@@ -49,6 +49,7 @@ def read_data(df_list=False, df_topic_doc=False, df_topic_word=False, df_topic_t
                     df_list.append(pd.read_csv(path_csv))
         return df_list
 
+    # Load a list of data frames, where each element is a table of dtm folder
     if df_topic_doc == True:
         df_topic_doc = []
         for month in month_list:
@@ -58,7 +59,8 @@ def read_data(df_list=False, df_topic_doc=False, df_topic_word=False, df_topic_t
                 pd.read_csv(path_file,
                             index_col= 0)
             )
-       # modify the index to fit the pipeline
+
+       # Adds .txt to the row.names of each dtm 
         df_topic_doc_modified = []
         for month_ix in range(len(month_list)):
             df_tmp = df_topic_doc[month_ix].copy()
@@ -103,7 +105,7 @@ def transform_doc(project_name, path_doc, path_meta, doc_extension):
 
     ### READ METADATA and INITIATE MONTH INDEX LIST
     df_list = read_data(df_list=True)
-    month_index_list = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
+    month_index_list = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
 
     ### DATA TRANSFORMATION
@@ -132,10 +134,11 @@ def transform_doc(project_name, path_doc, path_meta, doc_extension):
         # find .txt files that match their metadata entries
         for txt in txt_list:
             txt_entry_elements = txt.split('.')[0].split('_')  # looks like ['2005', 'Jan', '0']
-            txt_entry_elements[1] = folder[-2:]                # looks like ['2005', '01', '0']
-            txt_entry = '_'.join(txt_entry_elements)           # looks like '2005_01_0', use this to find document metadata in .csv file
+            #txt_entry_elements[1] = folder[-2:]                # looks like ['2005', '01', '0']
+            txt_entry = '_'.join(txt_entry_elements)           # looks like '2005_Jan_0', use this to find document metadata in .csv file
             # only record an entry if there's a match between .txt file and metadata,
             # and the file is readable.
+            #print(txt)
             try:
                 row = df_list[month_ix][df_list[month_ix]['id'] == txt_entry]  # the row of one text file in metadata
                 author = row['author'].values[0]
@@ -158,6 +161,7 @@ def transform_doc(project_name, path_doc, path_meta, doc_extension):
             except:
                 # here, you can do things like listing files that can't be parsed
                 # e.g. print(txt)
+                #print('Unable to parse '+txt)
                 pass
     
     # transform body into .json format
@@ -252,7 +256,6 @@ def transform_bins(project_name, path_doc, path_meta, path_dtm, path_ttm, path_t
         overlap = set(df_topic_doc[month_ix].index.tolist()) & set(tweet_id_txt[str(month_ix)]['txt'])
         overlap = list(overlap)
         df_topic_doc_overlap = df_topic_doc[month_ix].copy().loc[overlap, :]
-        
         # topic_prob & topic_doc
         for prob in range(10):
             bin_dict[str(month_ix)]['topic_model']['topic_prob'].append(str(month_ix) + '_' + str(prob))
