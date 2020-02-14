@@ -574,7 +574,7 @@ function showTweetsForTopic(topic) {
 		 tweetsToAdd += addTweet(tweets[sortable[pair][0]]);
 	 }
 
-	 $("#tweet_list_panel > #tweet_list_title").text("Tweets: Topic " + topic.id + " (" + count + ")");
+	 $("#tweet_list_panel > #tweet_list_title").text("Documents: Topic " + topic.id + " (" + count + ")");
 	 $("#tweet_list").append(tweetsToAdd)
 	 $("#topic_list_panel > .panel_name > #view_all").show();
 }
